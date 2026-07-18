@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة تحكم وشلي | Wishly Admin</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23D8BE7E'/%3E%3Cstop offset='1' stop-color='%23B08D3E'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='48' fill='url(%23g)'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle' fill='%231C1512' font-family='Georgia,serif'%3Eو%3C/text%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: { extend: {
+      colors: { cream:'#FBF6EF', offwhite:'#F3ECE2', ink:'#1C1512', ink2:'#2A211D', rose:'#C08B76', gold:'#B08D3E', goldL:'#D8BE7E', burgundy:'#5A2530', okgreen:'#4C7A5C' },
+      fontFamily: { display:['"Aref Ruqaa"','serif'], body:['"Tajawal"','sans-serif'] },
+    } }
+  }
+</script>
+
+<style>
+  body{ font-family:'Tajawal', sans-serif; background:#F3ECE2; color:#1C1512; }
+  html.dark body{ background:#171110; color:#F3ECE2; }
+  .font-display{ font-family:'Aref Ruqaa', serif; }
+  .seal-btn{ background: linear-gradient(145deg,#B08D3E,#8C6E2C); color:#FBF6EF; border-radius:999px; padding:.8rem 2rem; font-weight:700; transition: transform .3s, box-shadow .3s; box-shadow:0 8px 22px -8px rgba(176,141,62,.55); display:inline-flex; align-items:center; justify-content:center; }
+  .seal-btn:hover{ transform: translateY(-2px); }
+  .seal-btn:disabled{ opacity:.55; cursor:not-allowed; transform:none; }
+  .seal-btn.ghost{ background:transparent; color:#B08D3E; border:1.5px solid #B08D3E; box-shadow:none; }
+  .admin-sidebar-link{ display:flex; align-items:center; gap:.75rem; padding:.75rem 1rem; border-radius:.9rem; font-size:.9rem; font-weight:600; opacity:.65; transition:.25s; cursor:pointer; }
+  .admin-sidebar-link:hover{ opacity:1; background:rgba(176,141,62,.1); }
+  .admin-sidebar-link.active{ opacity:1; background:linear-gradient(145deg,#B08D3E,#8C6E2C); color:#FBF6EF; box-shadow:0 6px 16px -6px rgba(176,141,62,.55); }
+  .admin-card{ background:#FBF6EF; border:1px solid rgba(176,141,62,.18); border-radius:1.25rem; }
+  html.dark .admin-card{ background:#241B17; border-color:rgba(176,141,62,.15); }
+  .admin-input{ width:100%; border-radius:.75rem; border:1px solid rgba(176,141,62,.3); background:transparent; padding:.6rem .9rem; font-size:.875rem; }
+  .admin-input:focus{ outline:none; border-color:#B08D3E; }
+  .admin-th{ text-align:right; padding:.85rem 1rem; font-size:.75rem; font-weight:700; opacity:.55; white-space:nowrap; }
+  .admin-td{ padding:.85rem 1rem; font-size:.85rem; border-top:1px solid rgba(176,141,62,.12); }
+  .status-pill{ font-size:.7rem; font-weight:700; padding:.25rem .7rem; border-radius:999px; display:inline-block; white-space:nowrap; }
+  .badge-dot{ width:8px; height:8px; border-radius:50%; display:inline-block; }
+  ::-webkit-scrollbar{ width:9px; } ::-webkit-scrollbar-thumb{ background:#C08B76; border-radius:10px; }
+  .modal-bg{ background:rgba(28,21,18,.6); backdrop-filter: blur(6px); }
+  #invoicePaper{ font-family:'Tajawal', sans-serif; }
+  @media print {
+    body *{ visibility:hidden; }
+    #invoicePaper, #invoicePaper *{ visibility:visible; }
+    #invoicePaper{ position:fixed; inset:0; margin:0; box-shadow:none; }
+  }
+</style>
+</head>
+<body class="antialiased">
+
+<div id="toast" class="fixed bottom-6 right-6 z-[200] bg-ink text-cream border border-gold/30 rounded-2xl px-6 py-4 shadow-2xl flex items-center gap-3 max-w-[90vw] translate-y-[140%] transition-transform duration-500" style="transition:transform .5s cubic-bezier(.2,.8,.2,1)">
+  <i class="fa-solid fa-circle-check text-gold text-lg"></i><span id="toastMsg" class="text-sm font-medium">تم بنجاح</span>
+</div>
+
+<!-- =============== LOGIN SCREEN =============== -->
+<div id="loginScreen" class="min-h-screen flex items-center justify-center px-6 bg-ink relative overflow-hidden">
+  <div class="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-gold/10 blur-3xl"></div>
+  <div class="absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-rose/10 blur-3xl"></div>
+  <form id="loginForm" class="relative w-full max-w-sm bg-cream/5 border border-gold/20 rounded-[2rem] p-8 backdrop-blur-xl text-cream">
+    <div class="flex flex-col items-center mb-8">
+      <span class="w-16 h-16 rounded-full bg-gradient-to-br from-goldL to-gold flex items-center justify-center font-display text-2xl text-ink shadow-lg mb-4">و</span>
+      <p class="font-display text-2xl">لوحة تحكم وشلي</p>
+      <p class="text-xs text-gold/70 mt-1 tracking-widest">ADMIN ACCESS ONLY</p>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="text-xs font-bold opacity-70 mb-1 block">البريد الإلكتروني</label>
+        <input required id="loginEmail" type="email" class="w-full rounded-xl border border-gold/30 bg-transparent px-4 py-3 focus:outline-none focus:border-gold" placeholder="admin@wishly.com">
+      </div>
+      <div>
+        <label class="text-xs font-bold opacity-70 mb-1 block">كلمة المرور</label>
+        <input required id="loginPassword" type="password" class="w-full rounded-xl border border-gold/30 bg-transparent px-4 py-3 focus:outline-none focus:border-gold" placeholder="••••••••">
+      </div>
+      <p id="loginError" class="hidden text-burgundy bg-burgundy/10 border border-burgundy/30 rounded-xl px-4 py-2.5 text-sm"></p>
+      <button id="loginSubmitBtn" class="seal-btn w-full">دخول <i class="fa-solid fa-arrow-left mr-2"></i></button>
+    </div>
+    <p class="text-[11px] text-cream/40 mt-6 text-center leading-6">الوصول لهذه اللوحة مقتصر على فريق العمل فقط.<br>لإنشاء حساب جديد راجعي Firebase Console.</p>
+  </form>
+</div>
+
+<!-- =============== ADMIN APP =============== -->
+<div id="adminApp" class="hidden">
+  <div class="flex flex-col lg:flex-row">
+    <aside class="lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-l border-gold/15 p-5 lg:min-h-screen lg:sticky lg:top-0">
+      <div class="flex items-center justify-between mb-8">
+        <div class="flex items-center gap-2">
+          <span class="w-10 h-10 rounded-full bg-gradient-to-br from-goldL to-gold flex items-center justify-center font-display text-lg text-ink">و</span>
+          <div><p class="font-display text-lg leading-none">وشلي</p><p class="text-[10px] text-gold tracking-widest mt-1">ADMIN PANEL</p></div>
+        </div>
+      </div>
+      <nav class="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0" id="adminNav"></nav>
+      <div class="hidden lg:block mt-10 pt-6 border-t border-gold/15 space-y-2">
+        <p class="text-xs opacity-50 px-1 mb-2" id="loggedInAs"></p>
+        <button onclick="toggleDark()" class="admin-sidebar-link w-full"><i class="fa-solid fa-moon w-4"></i> الوضع الليلي</button>
+        <button onclick="doLogout()" class="admin-sidebar-link w-full text-burgundy"><i class="fa-solid fa-arrow-right-from-bracket w-4"></i> تسجيل الخروج</button>
+      </div>
+    </aside>
+
+    <main class="flex-1 p-5 md:p-8 max-w-[1400px]">
+      <div class="flex items-center justify-between mb-8 flex-wrap gap-3">
+        <div>
+          <h1 class="font-display text-3xl" id="adminPageTitle">التقارير</h1>
+          <p class="text-xs opacity-50 mt-1 flex items-center gap-2">
+            <span id="connStatus" class="flex items-center gap-1.5"><span class="badge-dot bg-okgreen"></span> متصلة بقاعدة البيانات مباشرة</span>
+          </p>
+        </div>
+        <span id="syncBadge" class="hidden items-center gap-2 text-xs text-okgreen font-bold"><span class="badge-dot bg-okgreen"></span> تم الحفظ</span>
+      </div>
+      <div id="adminContent"></div>
+    </main>
+  </div>
+</div>
+
+<!-- =============== ORDER DETAIL MODAL =============== -->
+<div id="orderDetailBg" class="fixed inset-0 z-[185] modal-bg hidden items-center justify-center p-4 overflow-y-auto">
+  <div class="admin-card max-w-2xl w-full my-8 overflow-hidden shadow-2xl">
+    <div class="flex items-center justify-between p-5 border-b border-gold/15">
+      <p class="font-display text-xl">تفاصيل الطلب <span id="odNumber" class="text-gold"></span></p>
+      <button onclick="closeOrderDetail()" class="w-9 h-9 rounded-full hover:bg-gold/10 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="orderDetailBody" class="p-6"></div>
+  </div>
+</div>
+
+<!-- =============== CUSTOM ORDER DETAIL MODAL =============== -->
+<div id="customDetailBg" class="fixed inset-0 z-[185] modal-bg hidden items-center justify-center p-4 overflow-y-auto">
+  <div class="admin-card max-w-xl w-full my-8 overflow-hidden shadow-2xl">
+    <div class="flex items-center justify-between p-5 border-b border-gold/15">
+      <p class="font-display text-xl"><i class="fa-solid fa-palette text-gold ml-1"></i> تفاصيل الطلب الخاص</p>
+      <button onclick="closeCustomDetail()" class="w-9 h-9 rounded-full hover:bg-gold/10 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="customDetailBody" class="p-6"></div>
+  </div>
+</div>
+
+<!-- =============== INVOICE MODAL =============== -->
+<div id="invoiceModalBg" class="fixed inset-0 z-[190] modal-bg hidden flex items-center justify-center p-4 overflow-y-auto">
+  <div class="bg-white text-ink rounded-2xl max-w-2xl w-full my-8 overflow-hidden shadow-2xl">
+    <div class="flex items-center justify-between p-4 border-b bg-offwhite no-print">
+      <p class="font-display text-xl">معاينة الفاتورة</p>
+      <div class="flex items-center gap-2">
+        <button onclick="downloadInvoicePDF()" class="seal-btn !py-2 !px-4 text-sm"><i class="fa-solid fa-download ml-1"></i> تحميل PDF</button>
+        <button onclick="window.print()" class="seal-btn ghost !py-2 !px-4 text-sm"><i class="fa-solid fa-print ml-1"></i> طباعة</button>
+        <button onclick="closeInvoice()" class="w-9 h-9 rounded-full hover:bg-black/5 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    </div>
+    <div id="invoicePaper" class="p-10" dir="rtl"></div>
+  </div>
+</div>
+
+<script type="module">
+/* =========================================================================
+   FIREBASE SETUP
+========================================================================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+import {
+  getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc,
+  onSnapshot, query, orderBy, getDoc
+} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+import {
+  getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
+} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+import {
+  getStorage, ref, uploadBytes, getDownloadURL
+} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-storage.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyAoeJyJNS0ZDOVPtIpLBm8yyZuSw7PmyBs",
+    authDomain: "twins-30485.firebaseapp.com",
+    projectId: "twins-30485",
+    storageBucket: "twins-30485.firebasestorage.app",
+    messagingSenderId: "763725449552",
+    appId: "1:763725449552:web:b8f367001b6796133c0455",
+    measurementId: "G-4T0FTPF17V"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+const storage = getStorage(app);
+
+/* =========================================================================
+   REFERENCE DATA
+========================================================================= */
+const CATEGORY_LIST = [
+  { key:'wedding',   name:'توزيعات أفراح' },   { key:'engagement',name:'توزيعات خطوبة' },
+  { key:'success',   name:'توزيعات نجاح' },    { key:'baby',      name:'استقبال المواليد' },
+  { key:'birthday',  name:'أعياد الميلاد' },   { key:'corporate', name:'هدايا الشركات' },
+  { key:'vip',       name:'هدايا VIP' },       { key:'custom',    name:'بوكسات حسب الطلب' },
+];
+const ORDER_STATUSES = ['قيد الانتظار','قيد التجهيز','جاهز للتسليم','تم التسليم','ملغي'];
+const STATUS_COLOR = { 'قيد الانتظار':'#B08D3E','قيد التجهيز':'#3B6FA0','جاهز للتسليم':'#8C6E2C','تم التسليم':'#4C7A5C','ملغي':'#5A2530','جديد':'#C08B76','تم التواصل':'#4C7A5C' };
+function catName(key){ return CATEGORY_LIST.find(c=>c.key===key)?.name || key; }
+function fallbackImg(){ return 'https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=400&q=80&auto=format'; }
+
+/* live caches populated by Firestore listeners */
+let products = [];
+let offers = [];
+let orders = [];
+let customOrders = [];
+let settings = { heroImage:'' };
+let unsub = [];
+
+/* =========================================================================
+   AUTH
+========================================================================= */
+const loginForm = document.getElementById('loginForm');
+loginForm.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPassword').value;
+  const btn = document.getElementById('loginSubmitBtn');
+  const errEl = document.getElementById('loginError');
+  errEl.classList.add('hidden');
+  btn.disabled = true; btn.innerHTML = 'جارِ الدخول...';
+  try{
+    await signInWithEmailAndPassword(auth, email, pass);
+  }catch(err){
+    errEl.textContent = mapAuthError(err.code);
+    errEl.classList.remove('hidden');
+  }
+  btn.disabled = false; btn.innerHTML = 'دخول <i class="fa-solid fa-arrow-left mr-2"></i>';
+});
+function mapAuthError(code){
+  const map = {
+    'auth/invalid-credential':'البريد الإلكتروني أو كلمة المرور غير صحيحة',
+    'auth/user-not-found':'لا يوجد حساب بهذا البريد الإلكتروني',
+    'auth/wrong-password':'كلمة المرور غير صحيحة',
+    'auth/invalid-email':'صيغة البريد الإلكتروني غير صحيحة',
+    'auth/too-many-requests':'محاولات كثيرة، حاولي بعد قليل',
+  };
+  return map[code] || 'حدث خطأ أثناء تسجيل الدخول، حاولي مرة أخرى';
+}
+window.doLogout = () => signOut(auth);
+
+onAuthStateChanged(auth, (user) => {
+  if(user){
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('adminApp').classList.remove('hidden');
+    document.getElementById('loggedInAs').textContent = user.email;
+    if('Notification' in window && Notification.permission==='default') Notification.requestPermission();
+    startListeners();
+    renderAdminNav(); renderAdminContent();
+  } else {
+    document.getElementById('adminApp').classList.add('hidden');
+    document.getElementById('loginScreen').classList.remove('hidden');
+    unsub.forEach(u=>u()); unsub = [];
+  }
+});
+
+/* =========================================================================
+   NEW-ORDER NOTIFICATIONS
+========================================================================= */
+let ordersInitialized = false;
+let customInitialized = false;
+function notifyNewOrder(kind, data){
+  const label = kind==='order' ? 'طلب جديد 🔔' : 'طلب خاص جديد 🎨';
+  const body = kind==='order' ? `${data.customer} — ${data.total} ج.س` : `${data.name} — ${data.occasion||''}`;
+  showToast(`${label} ${kind==='order' ? 'من ' + data.customer : 'من ' + data.name}`, true);
+  if('Notification' in window && Notification.permission==='granted'){
+    try{ new Notification(label, { body, icon:'', tag: kind+'-'+Date.now() }); }catch(e){}
+  }
+}
+
+/* =========================================================================
+   REAL-TIME LISTENERS  (same Firestore project the storefront reads from)
+========================================================================= */
+function startListeners(){
+  unsub.push(onSnapshot(collection(db,'products'), snap => {
+    products = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    if(activeAdminTab==='products') renderProdRows();
+    if(activeAdminTab==='reports') renderReportsTab();
+  }, err => showToast('تعذر تحميل المنتجات — ' + friendlyFirebaseError(err), true)));
+
+  unsub.push(onSnapshot(collection(db,'offers'), snap => {
+    offers = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    if(activeAdminTab==='offers') renderOfferRows();
+  }));
+
+  unsub.push(onSnapshot(query(collection(db,'orders'), orderBy('createdAt','desc')), snap => {
+    if(ordersInitialized){
+      snap.docChanges().forEach(ch => { if(ch.type==='added') notifyNewOrder('order', ch.doc.data()); });
+    }
+    orders = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    ordersInitialized = true;
+    if(activeAdminTab==='orders') renderOrderRows();
+    if(activeAdminTab==='reports') renderReportsTab();
+    renderAdminNav();
+  }, err => showToast('تعذر تحميل الطلبات — ' + friendlyFirebaseError(err), true)));
+
+  unsub.push(onSnapshot(doc(db,'settings','store'), snap => {
+    if(snap.exists()) settings = snap.data();
+    if(activeAdminTab==='settings') renderSettingsTab();
+  }));
+
+  unsub.push(onSnapshot(query(collection(db,'customOrders'), orderBy('createdAt','desc')), snap => {
+    if(customInitialized){
+      snap.docChanges().forEach(ch => { if(ch.type==='added') notifyNewOrder('custom', ch.doc.data()); });
+    }
+    customOrders = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    customInitialized = true;
+    if(activeAdminTab==='custom') renderCustomOrdersTab();
+    renderAdminNav();
+  }, err => showToast('تعذر تحميل الطلبات الخاصة — ' + friendlyFirebaseError(err), true)));
+}
+
+/* =========================================================================
+   IMAGE UPLOAD → FIREBASE STORAGE
+========================================================================= */
+function resizeToBlob(file, maxDim=1000, quality=0.75){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        let w=img.width, h=img.height;
+        if(w>h && w>maxDim){ h=Math.round(h*maxDim/w); w=maxDim; } else if(h>=w && h>maxDim){ w=Math.round(w*maxDim/h); h=maxDim; }
+        const canvas = document.createElement('canvas'); canvas.width=w; canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        canvas.toBlob(blob=>resolve(blob), 'image/jpeg', quality);
+      };
+      img.onerror = reject; img.src = e.target.result;
+    };
+    reader.onerror = reject; reader.readAsDataURL(file);
+  });
+}
+async function uploadImage(file, folder){
+  const blob = await resizeToBlob(file);
+  const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+  const sRef = ref(storage, path);
+  await uploadBytes(sRef, blob, { contentType:'image/jpeg' });
+  return await getDownloadURL(sRef);
+}
+
+/* =========================================================================
+   TOAST / DARK MODE
+========================================================================= */
+let toastTimer;
+function showToast(msg, isError=false){
+  document.getElementById('toastMsg').textContent = msg;
+  const t = document.getElementById('toast');
+  t.style.transform = 'translateY(0)';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.style.transform = 'translateY(140%)', isError ? 7000 : 3200);
+}
+window.showToast = showToast;
+window.toggleDark = () => document.documentElement.classList.toggle('dark');
+
+/* Turns a raw Firebase error into an actionable Arabic message instead of
+   a generic "something went wrong" — shows the real cause so it can be fixed. */
+function friendlyFirebaseError(err){
+  const code = err?.code || '';
+  const map = {
+    'storage/unauthorized': 'مفيش صلاحية لرفع الصور — راجعي Storage Rules في Firebase Console وتأكدي إنها تسمح بالكتابة للمستخدمين المسجلين (request.auth != null)',
+    'storage/unauthenticated': 'لازم تكوني مسجلة دخول عشان ترفعي صور — سجّلي خروج ودخول تاني',
+    'storage/unknown': 'تعذر الوصول لخدمة Cloud Storage — أغلب الظن إنها لسه مش مفعّلة في مشروعك. من Firebase Console: Storage ← Get Started',
+    'storage/object-not-found': 'الملف غير موجود في التخزين',
+    'storage/retry-limit-exceeded': 'انتهت مهلة رفع الصورة، تأكدي من سرعة الإنترنت وحاولي بصورة أصغر',
+    'permission-denied': 'الصلاحيات مرفوضة في Firestore — راجعي Firestore Rules وتأكدي إنها تسمح بالكتابة للمستخدمين المسجلين',
+    'unavailable': 'تعذر الاتصال بقاعدة البيانات، تحققي من اتصال الإنترنت',
+  };
+  return map[code] || `حدث خطأ: ${code || err?.message || 'غير معروف'}`;
+}
+function flashSync(){
+  const b = document.getElementById('syncBadge');
+  b.classList.remove('hidden'); b.classList.add('flex');
+  setTimeout(()=>b.classList.add('hidden'), 2000);
+}
+
+/* =========================================================================
+   ADMIN NAV / ROUTING BETWEEN TABS
+========================================================================= */
+const ADMIN_TABS = [
+  { key:'reports',  label:'التقارير',       icon:'fa-chart-line' },
+  { key:'products', label:'المنتجات',       icon:'fa-box' },
+  { key:'offers',   label:'العروض',         icon:'fa-tags' },
+  { key:'orders',   label:'الطلبات',        icon:'fa-truck' },
+  { key:'custom',   label:'الطلبات الخاصة', icon:'fa-palette' },
+  { key:'settings', label:'الإعدادات',      icon:'fa-gear' },
+];
+let activeAdminTab = 'reports';
+let reportsRange = 30;
+let editingProductId = null;
+let editingOfferId = null;
+let ordersStatusFilter = 'all';
+let ordersSearch = '';
+let charts = {};
+let pfImageFile = null;
+
+function unseenCount(list){ return list.filter(x=>x.seen===false).length; }
+function renderAdminNav(){
+  const counts = { orders: unseenCount(orders), custom: unseenCount(customOrders) };
+  document.getElementById('adminNav').innerHTML = ADMIN_TABS.map(t => {
+    const n = counts[t.key] || 0;
+    return `<button data-tab="${t.key}" class="admin-sidebar-link shrink-0 relative ${activeAdminTab===t.key?'active':''}">
+      <i class="fa-solid ${t.icon} w-4"></i> ${t.label}
+      ${n>0 ? `<span class="bg-burgundy text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center mr-auto lg:mr-0 lg:absolute lg:-top-1.5 lg:-left-1.5">${n}</span>`:''}
+    </button>`;
+  }).join('');
+  document.querySelectorAll('#adminNav [data-tab]').forEach(btn=>{
+    btn.onclick = () => {
+      activeAdminTab = btn.dataset.tab;
+      document.getElementById('adminPageTitle').textContent = ADMIN_TABS.find(t=>t.key===activeAdminTab).label;
+      renderAdminNav(); renderAdminContent();
+      if(activeAdminTab==='orders') markAllSeen('orders', orders);
+      if(activeAdminTab==='custom') markAllSeen('customOrders', customOrders);
+    };
+  });
+}
+async function markAllSeen(collectionName, list){
+  const unseen = list.filter(x=>x.seen===false);
+  if(!unseen.length) return;
+  try{
+    await Promise.all(unseen.map(x=>updateDoc(doc(db,collectionName,x.id), { seen:true })));
+  }catch(err){ /* non-critical — badge will just stay until next successful sync */ }
+}
+function renderAdminContent(){
+  if(activeAdminTab==='reports') renderReportsTab();
+  if(activeAdminTab==='products') renderProductsTab();
+  if(activeAdminTab==='offers') renderOffersTab();
+  if(activeAdminTab==='orders') renderOrdersTab();
+  if(activeAdminTab==='custom') renderCustomOrdersTab();
+  if(activeAdminTab==='settings') renderSettingsTab();
+}
+
+/* =========================================================================
+   CUSTOM ORDERS TAB (requests from the "طلب خاص" form on the storefront)
+========================================================================= */
+function renderCustomOrdersTab(){
+  document.getElementById('adminContent').innerHTML = `
+    <div class="admin-card overflow-x-auto">
+      <table class="w-full min-w-[900px]">
+        <thead><tr><th class="admin-th">الاسم</th><th class="admin-th">الهاتف</th><th class="admin-th">المناسبة</th><th class="admin-th">الموعد</th><th class="admin-th">عدد القطع</th><th class="admin-th">الميزانية</th><th class="admin-th">الفكرة</th><th class="admin-th">التاريخ</th><th class="admin-th">الحالة</th><th class="admin-th"></th></tr></thead>
+        <tbody id="customRows"></tbody>
+      </table>
+    </div>`;
+  renderCustomRows();
+}
+function renderCustomRows(){
+  const el = document.getElementById('customRows'); if(!el) return;
+  el.innerHTML = customOrders.map(c => `
+    <tr data-crow="${c.id}" class="cursor-pointer hover:bg-gold/5 transition-colors">
+      <td class="admin-td font-bold">${c.name||'—'}</td>
+      <td class="admin-td">${c.phone||'—'}</td>
+      <td class="admin-td">${c.occasion||'—'}</td>
+      <td class="admin-td text-xs">${c.eventDate||'—'}</td>
+      <td class="admin-td">${c.pieces||'—'}</td>
+      <td class="admin-td">${c.budget||'—'}</td>
+      <td class="admin-td max-w-[220px]"><p class="truncate" title="${(c.description||'').replace(/"/g,'&quot;')}">${c.description||'—'}</p></td>
+      <td class="admin-td text-xs">${c.createdAt ? new Date(c.createdAt).toLocaleString('ar-EG') : '—'}</td>
+      <td class="admin-td">${statusPill(c.status||'جديد')}</td>
+      <td class="admin-td text-left" data-stop>
+        <button data-contacted="${c.id}" class="text-okgreen hover:opacity-70 ml-3" title="تم التواصل"><i class="fa-solid fa-phone-volume"></i></button>
+        <button data-delc="${c.id}" class="text-burgundy hover:opacity-70" title="حذف"><i class="fa-solid fa-trash"></i></button>
+      </td>
+    </tr>`).join('') || `<tr><td class="admin-td opacity-50" colspan="10">لا توجد طلبات خاصة بعد — بمجرد إرسال أي عميلة نموذج "طلب خاص" من المتجر سيظهر هنا فوراً.</td></tr>`;
+  el.querySelectorAll('[data-contacted]').forEach(b=> b.onclick = ()=>markCustomContacted(b.dataset.contacted));
+  el.querySelectorAll('[data-delc]').forEach(b=> b.onclick = ()=>deleteCustomOrder(b.dataset.delc));
+  el.querySelectorAll('[data-stop]').forEach(cell => cell.onclick = (e)=> e.stopPropagation());
+  el.querySelectorAll('[data-crow]').forEach(row => row.onclick = ()=> openCustomDetail(row.dataset.crow));
+}
+async function markCustomContacted(id){
+  try{ await updateDoc(doc(db,'customOrders',id), { status:'تم التواصل' }); showToast('تم تحديث حالة الطلب الخاص'); }
+  catch(err){ showToast('تعذر التحديث — ' + friendlyFirebaseError(err), true); }
+}
+async function deleteCustomOrder(id){
+  try{ await deleteDoc(doc(db,'customOrders',id)); showToast('تم حذف الطلب الخاص'); }
+  catch(err){ showToast('تعذر الحذف — ' + friendlyFirebaseError(err), true); }
+}
+function openCustomDetail(id){
+  const c = customOrders.find(x=>x.id===id); if(!c) return;
+  document.getElementById('customDetailBody').innerHTML = `
+    <div class="grid sm:grid-cols-2 gap-4 mb-6">
+      <div class="admin-card p-4"><p class="text-xs opacity-50 mb-1">الاسم</p><p class="font-bold">${c.name||'—'}</p></div>
+      <div class="admin-card p-4"><p class="text-xs opacity-50 mb-1">رقم الهاتف</p><p class="font-bold" dir="ltr">${c.phone||'—'}</p><a href="https://wa.me/2${(c.phone||'').replace(/[^0-9]/g,'')}" target="_blank" rel="noopener" class="text-xs text-okgreen mt-1 inline-block"><i class="fa-brands fa-whatsapp ml-1"></i> تواصل واتساب</a></div>
+      <div class="admin-card p-4"><p class="text-xs opacity-50 mb-1">نوع المناسبة</p><p class="font-bold">${c.occasion||'—'}</p></div>
+      <div class="admin-card p-4"><p class="text-xs opacity-50 mb-1">موعد المناسبة</p><p class="font-bold">${c.eventDate||'—'}</p></div>
+      <div class="admin-card p-4"><p class="text-xs opacity-50 mb-1">عدد القطع</p><p class="font-bold">${c.pieces||'—'}</p></div>
+      <div class="admin-card p-4"><p class="text-xs opacity-50 mb-1">الميزانية التقريبية</p><p class="font-bold">${c.budget||'—'}</p></div>
+    </div>
+    <div class="admin-card p-4 mb-6"><p class="text-xs opacity-50 mb-2">فكرة العميلة</p><p class="leading-7">${c.description || 'لم تُدخل تفاصيل إضافية'}</p></div>
+    <div class="flex items-center justify-between mb-6">
+      <p class="text-xs opacity-50">تاريخ الطلب: ${c.createdAt ? new Date(c.createdAt).toLocaleString('ar-EG') : '—'}</p>
+      ${statusPill(c.status||'جديد')}
+    </div>
+    <div class="flex gap-2">
+      <button onclick="markCustomContacted('${c.id}'); closeCustomDetail();" class="seal-btn flex-1 text-sm"><i class="fa-solid fa-phone-volume ml-1"></i> تم التواصل</button>
+      <button onclick="deleteCustomOrder('${c.id}'); closeCustomDetail();" class="seal-btn ghost !border-burgundy !text-burgundy !px-4 text-sm">حذف</button>
+      <button onclick="closeCustomDetail()" class="seal-btn ghost !px-4 text-sm">إغلاق</button>
+    </div>`;
+  document.getElementById('customDetailBg').classList.remove('hidden');
+  document.getElementById('customDetailBg').classList.add('flex');
+}
+window.closeCustomDetail = () => { document.getElementById('customDetailBg').classList.add('hidden'); document.getElementById('customDetailBg').classList.remove('flex'); };
+window.markCustomContacted = markCustomContacted;
+window.deleteCustomOrder = deleteCustomOrder;
+
+/* =========================================================================
+   REPORTS TAB
+========================================================================= */
+function ordersInRange(days){
+  if(days>=9999) return orders;
+  const from = Date.now() - days*86400000;
+  return orders.filter(o=>o.createdAt >= from);
+}
+function kpiCard(icon, value, label){ return `<div class="admin-card p-5"><i class="fa-solid ${icon} text-gold mb-2"></i><p class="text-2xl font-display">${value}</p><p class="text-xs opacity-50">${label}</p></div>`; }
+function statusPill(status){ const c = STATUS_COLOR[status] || '#B08D3E'; return `<span class="status-pill" style="background:${c}22; color:${c}">${status}</span>`; }
+
+function renderReportsTab(){
+  const wrap = document.getElementById('adminContent');
+  const rangeOrders = ordersInRange(reportsRange);
+  const validOrders = rangeOrders.filter(o=>o.status!=='ملغي');
+  const revenue = validOrders.reduce((s,o)=>s+o.total,0);
+  const avgOrder = validOrders.length ? Math.round(revenue/validOrders.length) : 0;
+  const customers = new Set(rangeOrders.map(o=>o.phone)).size;
+  const delivered = rangeOrders.filter(o=>o.status==='تم التسليم').length;
+  const completionRate = rangeOrders.length ? Math.round(delivered/rangeOrders.length*100) : 0;
+
+  const unseenOrders = unseenCount(orders);
+  const unseenCustom = unseenCount(customOrders);
+  wrap.innerHTML = `
+    ${(unseenOrders+unseenCustom)>0 ? `
+    <div class="flex flex-wrap gap-3 mb-6">
+      ${unseenOrders>0 ? `<button data-jump="orders" class="jump-alert flex items-center gap-2 bg-burgundy/10 border border-burgundy/30 text-burgundy px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-burgundy/15"><i class="fa-solid fa-bell"></i> ${unseenOrders} طلب جديد لم تتم مراجعته</button>` : ''}
+      ${unseenCustom>0 ? `<button data-jump="custom" class="jump-alert flex items-center gap-2 bg-gold/10 border border-gold/30 text-gold px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-gold/15"><i class="fa-solid fa-palette"></i> ${unseenCustom} طلب خاص جديد</button>` : ''}
+    </div>` : ''}
+    <div class="flex flex-wrap items-center gap-2 mb-6">
+      ${[7,30,90,9999].map(r => `<button data-range="${r}" class="range-btn px-4 py-2 rounded-full text-xs font-bold border ${reportsRange===r?'bg-gold border-gold text-ink':'border-gold/25 hover:bg-gold/10'}">${r===9999?'كل الفترة':'آخر '+r+' يوم'}</button>`).join('')}
+    </div>
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+      ${kpiCard('fa-sack-dollar', revenue.toLocaleString()+' ج.س', 'إجمالي الإيرادات')}
+      ${kpiCard('fa-bag-shopping', rangeOrders.length, 'عدد الطلبات')}
+      ${kpiCard('fa-receipt', avgOrder+' ج.س', 'متوسط قيمة الطلب')}
+      ${kpiCard('fa-users', customers, 'عدد العملاء')}
+      ${kpiCard('fa-circle-check', completionRate+'%', 'معدل الإنجاز')}
+    </div>
+    ${orders.length===0 ? `<div class="admin-card p-10 text-center opacity-50"><i class="fa-solid fa-inbox text-3xl mb-3"></i><p>لا توجد طلبات بعد — بمجرد وصول أول طلب من المتجر ستظهر التقارير هنا مباشرة.</p></div>` : `
+    <div class="grid lg:grid-cols-3 gap-6 mb-8">
+      <div class="admin-card p-6 lg:col-span-2"><p class="font-bold mb-4"><i class="fa-solid fa-chart-line text-gold ml-1"></i> الإيرادات خلال الفترة</p><canvas id="revenueChart" height="130"></canvas></div>
+      <div class="admin-card p-6"><p class="font-bold mb-4"><i class="fa-solid fa-chart-pie text-gold ml-1"></i> حالة الطلبات</p><canvas id="statusChart" height="130"></canvas></div>
+    </div>
+    <div class="grid lg:grid-cols-3 gap-6">
+      <div class="admin-card p-6 lg:col-span-1"><p class="font-bold mb-4"><i class="fa-solid fa-ranking-star text-gold ml-1"></i> الأكثر مبيعاً</p><canvas id="topProductsChart" height="180"></canvas></div>
+      <div class="admin-card p-6 lg:col-span-2 overflow-x-auto">
+        <p class="font-bold mb-4"><i class="fa-solid fa-clock-rotate-left text-gold ml-1"></i> أحدث الطلبات</p>
+        <table class="w-full"><thead><tr><th class="admin-th">الطلب</th><th class="admin-th">العميلة</th><th class="admin-th">الإجمالي</th><th class="admin-th">الحالة</th></tr></thead>
+        <tbody>${[...orders].slice(0,6).map(o=>`<tr><td class="admin-td">#${o.id.slice(-6).toUpperCase()}</td><td class="admin-td">${o.customer}</td><td class="admin-td">${o.total} ج.س</td><td class="admin-td">${statusPill(o.status)}</td></tr>`).join('')}</tbody></table>
+      </div>
+    </div>`}`;
+
+  document.querySelectorAll('.range-btn').forEach(b=> b.onclick = () => { reportsRange = Number(b.dataset.range); renderReportsTab(); });
+  document.querySelectorAll('.jump-alert').forEach(b=> b.onclick = () => {
+    activeAdminTab = b.dataset.jump;
+    document.getElementById('adminPageTitle').textContent = ADMIN_TABS.find(t=>t.key===activeAdminTab).label;
+    renderAdminNav(); renderAdminContent();
+    if(activeAdminTab==='orders') markAllSeen('orders', orders);
+    if(activeAdminTab==='custom') markAllSeen('customOrders', customOrders);
+  });
+  if(orders.length) renderReportsCharts(rangeOrders);
+}
+function renderReportsCharts(rangeOrders){
+  Object.values(charts).forEach(c=>c && c.destroy());
+  const isDarkMode = document.documentElement.classList.contains('dark');
+  Chart.defaults.color = isDarkMode ? '#F3ECE2' : '#1C1512';
+  Chart.defaults.font.family = 'Tajawal';
+
+  const days = reportsRange>=9999 ? 30 : reportsRange;
+  const labels = [], data = [];
+  for(let i=days-1;i>=0;i--){
+    const day = new Date(Date.now() - i*86400000);
+    labels.push(day.toLocaleDateString('ar-EG',{day:'2-digit',month:'2-digit'}));
+    const sum = rangeOrders.filter(o=> new Date(o.createdAt).toDateString()===day.toDateString() && o.status!=='ملغي').reduce((s,o)=>s+o.total,0);
+    data.push(sum);
+  }
+  charts.revenue = new Chart(document.getElementById('revenueChart'), {
+    type:'line', data:{ labels, datasets:[{ label:'الإيرادات', data, borderColor:'#B08D3E', backgroundColor:'rgba(176,141,62,.15)', fill:true, tension:.4, pointRadius:0 }] },
+    options:{ plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false}}, y:{grid:{color:'rgba(176,141,62,.1)'}} } }
+  });
+  const counts = ORDER_STATUSES.map(s=>rangeOrders.filter(o=>o.status===s).length);
+  charts.status = new Chart(document.getElementById('statusChart'), {
+    type:'doughnut', data:{ labels:ORDER_STATUSES, datasets:[{ data:counts, backgroundColor:ORDER_STATUSES.map(s=>STATUS_COLOR[s]) }] },
+    options:{ plugins:{legend:{position:'bottom', labels:{boxWidth:10, font:{size:10}}}} }
+  });
+  const qtyMap = {};
+  rangeOrders.forEach(o=> (o.items||[]).forEach(it=>{ qtyMap[it.name] = (qtyMap[it.name]||0) + it.qty; }));
+  const top = Object.entries(qtyMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  charts.top = new Chart(document.getElementById('topProductsChart'), {
+    type:'bar', data:{ labels: top.map(t=>t[0]), datasets:[{ data: top.map(t=>t[1]), backgroundColor:'#C08B76', borderRadius:6 }] },
+    options:{ indexAxis:'y', plugins:{legend:{display:false}}, scales:{ x:{grid:{color:'rgba(176,141,62,.1)'}}, y:{grid:{display:false}} } }
+  });
+}
+
+/* =========================================================================
+   PRODUCTS TAB
+========================================================================= */
+function renderProductsTab(){
+  document.getElementById('adminContent').innerHTML = `
+    <div class="grid lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 admin-card overflow-hidden">
+        <table class="w-full"><thead><tr><th class="admin-th">المنتج</th><th class="admin-th">القسم</th><th class="admin-th">السعر</th><th class="admin-th">الحالة</th><th class="admin-th"></th></tr></thead>
+        <tbody id="prodRows"></tbody></table>
+      </div>
+      <form id="productForm" class="admin-card p-6 space-y-3 h-fit">
+        <p class="font-bold mb-1" id="prodFormTitle"><i class="fa-solid fa-plus text-gold ml-1"></i> إضافة منتج جديد</p>
+        <input required id="pfName" placeholder="اسم المنتج" class="admin-input">
+        <select id="pfCat" class="admin-input">${CATEGORY_LIST.map(c=>`<option value="${c.key}">${c.name}</option>`).join('')}</select>
+        <div class="grid grid-cols-2 gap-2">
+          <input required id="pfPrice" type="number" min="0" placeholder="السعر" class="admin-input">
+          <input id="pfOld" type="number" min="0" placeholder="السعر قبل الخصم" class="admin-input">
+        </div>
+        <select id="pfTag" class="admin-input"><option value="new">وصل حديثاً</option><option value="bestseller">الأكثر مبيعاً</option><option value="sale">عرض</option></select>
+        <input id="pfBadge" placeholder="شارة (اختياري) مثال: حصري" class="admin-input">
+        <input type="file" accept="image/*" id="pfImage" class="w-full text-xs file:ml-2 file:rounded-full file:border-0 file:bg-gold/15 file:text-gold file:px-3 file:py-1.5">
+        <img id="pfImgPreview" class="hidden w-full h-32 object-cover rounded-xl">
+        <div class="flex gap-2">
+          <button type="submit" class="seal-btn flex-1 !py-2.5 text-sm" id="prodFormSubmit">إضافة المنتج</button>
+          <button type="button" id="prodFormCancel" class="hidden seal-btn ghost !py-2.5 !px-4 text-sm">إلغاء</button>
+        </div>
+      </form>
+    </div>`;
+  renderProdRows();
+  document.getElementById('pfImage').addEventListener('change', async (e)=>{
+    const file = e.target.files[0]; if(!file) return;
+    pfImageFile = file;
+    const prev = document.getElementById('pfImgPreview');
+    prev.src = URL.createObjectURL(file); prev.classList.remove('hidden');
+  });
+  document.getElementById('productForm').addEventListener('submit', saveProduct);
+  document.getElementById('prodFormCancel').addEventListener('click', resetProductForm);
+}
+function renderProdRows(){
+  const el = document.getElementById('prodRows'); if(!el) return;
+  el.innerHTML = products.map(p => `
+    <tr><td class="admin-td flex items-center gap-3"><img src="${p.img||fallbackImg()}" class="w-10 h-10 rounded-lg object-cover">${p.name}</td>
+      <td class="admin-td">${catName(p.cat)}</td>
+      <td class="admin-td">${p.price} ج.س ${p.old?`<span class="opacity-40 line-through text-xs">${p.old}</span>`:''}</td>
+      <td class="admin-td">${p.badge ? statusPill(p.badge) : '<span class="opacity-40 text-xs">—</span>'}</td>
+      <td class="admin-td text-left"><button data-edit="${p.id}" class="text-gold hover:opacity-70 ml-3"><i class="fa-solid fa-pen"></i></button><button data-del="${p.id}" class="text-burgundy hover:opacity-70"><i class="fa-solid fa-trash"></i></button></td>
+    </tr>`).join('') || `<tr><td class="admin-td opacity-50" colspan="5">لا توجد منتجات بعد — أضيفي أول منتج من النموذج المجاور.</td></tr>`;
+  el.querySelectorAll('[data-edit]').forEach(b=> b.onclick = ()=>editProduct(b.dataset.edit));
+  el.querySelectorAll('[data-del]').forEach(b=> b.onclick = ()=>confirmDeleteProduct(b.dataset.del, b));
+}
+function editProduct(id){
+  const p = products.find(x=>x.id===id); if(!p) return;
+  editingProductId = id; pfImageFile = null;
+  document.getElementById('pfName').value = p.name;
+  document.getElementById('pfCat').value = p.cat;
+  document.getElementById('pfPrice').value = p.price;
+  document.getElementById('pfOld').value = p.old || '';
+  document.getElementById('pfTag').value = p.tag;
+  document.getElementById('pfBadge').value = p.badge || '';
+  const prev = document.getElementById('pfImgPreview'); prev.src = p.img || fallbackImg(); prev.classList.remove('hidden');
+  document.getElementById('prodFormTitle').innerHTML = '<i class="fa-solid fa-pen text-gold ml-1"></i> تعديل المنتج';
+  document.getElementById('prodFormSubmit').textContent = 'حفظ التعديلات';
+  document.getElementById('prodFormCancel').classList.remove('hidden');
+  document.getElementById('productForm').scrollIntoView({behavior:'smooth', block:'center'});
+}
+function resetProductForm(){
+  editingProductId = null; pfImageFile = null;
+  document.getElementById('productForm').reset();
+  document.getElementById('pfImgPreview').classList.add('hidden');
+  document.getElementById('prodFormTitle').innerHTML = '<i class="fa-solid fa-plus text-gold ml-1"></i> إضافة منتج جديد';
+  document.getElementById('prodFormSubmit').textContent = 'إضافة المنتج';
+  document.getElementById('prodFormCancel').classList.add('hidden');
+}
+async function saveProduct(e){
+  e.preventDefault();
+  const btn = document.getElementById('prodFormSubmit'); const original = btn.textContent;
+  btn.disabled = true; btn.textContent = 'جارِ الحفظ...';
+  try{
+    const name = document.getElementById('pfName').value.trim();
+    const cat = document.getElementById('pfCat').value;
+    const price = Number(document.getElementById('pfPrice').value);
+    const old = Number(document.getElementById('pfOld').value) || 0;
+    const tag = document.getElementById('pfTag').value;
+    const badge = document.getElementById('pfBadge').value.trim();
+    let img = editingProductId ? (products.find(x=>x.id===editingProductId)?.img || '') : '';
+    if(pfImageFile){
+      try{
+        img = await uploadImage(pfImageFile, 'products');
+      }catch(uploadErr){
+        console.error(uploadErr);
+        showToast('تعذر رفع الصورة — ' + friendlyFirebaseError(uploadErr) + '. سيتم حفظ المنتج بصورة مؤقتة، عدّليها لاحقاً.', true);
+      }
+    }
+    if(!img) img = fallbackImg();
+
+    if(editingProductId){
+      await updateDoc(doc(db,'products',editingProductId), { name, cat, price, old, tag, badge, img });
+      showToast(`تم تحديث "${name}" بنجاح ✏️`);
+    } else {
+      await addDoc(collection(db,'products'), { name, cat, price, old, tag, badge, img, createdAt: Date.now() });
+      showToast(`تمت إضافة "${name}" للمتجر مباشرة ✨`);
+    }
+    flashSync();
+    resetProductForm();
+  }catch(err){
+    showToast('تعذر حفظ المنتج — ' + friendlyFirebaseError(err), true);
+    console.error(err);
+  }
+  btn.disabled = false; btn.textContent = original;
+}
+let deleteConfirmTimer;
+function confirmDeleteProduct(id, btn){
+  if(btn.dataset.confirm==='1'){
+    deleteDoc(doc(db,'products',id)).then(()=>{ showToast('تم حذف المنتج من المتجر'); flashSync(); });
+    return;
+  }
+  btn.dataset.confirm='1'; btn.innerHTML = '<span class="text-[10px] font-bold">تأكيد؟</span>';
+  clearTimeout(deleteConfirmTimer);
+  deleteConfirmTimer = setTimeout(()=>{ btn.dataset.confirm='0'; btn.innerHTML='<i class="fa-solid fa-trash"></i>'; }, 3000);
+}
+
+/* =========================================================================
+   OFFERS TAB
+========================================================================= */
+function renderOffersTab(){
+  document.getElementById('adminContent').innerHTML = `
+    <div class="grid lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 admin-card overflow-hidden">
+        <table class="w-full"><thead><tr><th class="admin-th">العرض</th><th class="admin-th">الخصم</th><th class="admin-th">القسم</th><th class="admin-th">ينتهي</th><th class="admin-th">مفعّل</th><th class="admin-th"></th></tr></thead>
+        <tbody id="offerRows"></tbody></table>
+      </div>
+      <form id="offerForm" class="admin-card p-6 space-y-3 h-fit">
+        <p class="font-bold mb-1" id="offerFormTitle"><i class="fa-solid fa-plus text-gold ml-1"></i> إنشاء عرض جديد</p>
+        <input required id="ofTitle" placeholder="عنوان العرض" class="admin-input">
+        <div class="grid grid-cols-2 gap-2">
+          <input required id="ofDiscount" type="number" min="1" max="90" placeholder="نسبة الخصم %" class="admin-input">
+          <input required id="ofEnds" type="datetime-local" class="admin-input">
+        </div>
+        <select id="ofCategory" class="admin-input">${CATEGORY_LIST.map(c=>`<option value="${c.key}">${c.name}</option>`).join('')}</select>
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="ofActive" checked class="w-4 h-4"> عرض مفعّل حالياً</label>
+        <div class="flex gap-2">
+          <button type="submit" class="seal-btn flex-1 !py-2.5 text-sm" id="offerFormSubmit">حفظ العرض</button>
+          <button type="button" id="offerFormCancel" class="hidden seal-btn ghost !py-2.5 !px-4 text-sm">إلغاء</button>
+        </div>
+      </form>
+    </div>`;
+  renderOfferRows();
+  document.getElementById('offerForm').addEventListener('submit', saveOffer);
+  document.getElementById('offerFormCancel').addEventListener('click', resetOfferForm);
+}
+function renderOfferRows(){
+  const el = document.getElementById('offerRows'); if(!el) return;
+  el.innerHTML = offers.map(o => `
+    <tr><td class="admin-td">${o.title}</td><td class="admin-td">${o.discount}%</td><td class="admin-td">${catName(o.category)}</td>
+      <td class="admin-td text-xs">${new Date(o.endsAt).toLocaleString('ar-EG')}</td>
+      <td class="admin-td">${o.active ? statusPill('مفعّل') : '<span class="opacity-40 text-xs">متوقف</span>'}</td>
+      <td class="admin-td text-left"><button data-edit="${o.id}" class="text-gold hover:opacity-70 ml-3"><i class="fa-solid fa-pen"></i></button><button data-del="${o.id}" class="text-burgundy hover:opacity-70"><i class="fa-solid fa-trash"></i></button></td>
+    </tr>`).join('') || `<tr><td class="admin-td opacity-50" colspan="6">لا توجد عروض بعد</td></tr>`;
+  el.querySelectorAll('[data-edit]').forEach(b=> b.onclick = ()=>editOffer(b.dataset.edit));
+  el.querySelectorAll('[data-del]').forEach(b=> b.onclick = ()=>deleteOffer(b.dataset.del));
+}
+function editOffer(id){
+  const o = offers.find(x=>x.id===id); if(!o) return;
+  editingOfferId = id;
+  document.getElementById('ofTitle').value = o.title;
+  document.getElementById('ofDiscount').value = o.discount;
+  document.getElementById('ofEnds').value = new Date(o.endsAt - new Date().getTimezoneOffset()*60000).toISOString().slice(0,16);
+  document.getElementById('ofCategory').value = o.category;
+  document.getElementById('ofActive').checked = o.active;
+  document.getElementById('offerFormTitle').innerHTML = '<i class="fa-solid fa-pen text-gold ml-1"></i> تعديل العرض';
+  document.getElementById('offerFormSubmit').textContent = 'حفظ التعديلات';
+  document.getElementById('offerFormCancel').classList.remove('hidden');
+}
+function resetOfferForm(){
+  editingOfferId = null;
+  document.getElementById('offerForm').reset();
+  document.getElementById('offerFormTitle').innerHTML = '<i class="fa-solid fa-plus text-gold ml-1"></i> إنشاء عرض جديد';
+  document.getElementById('offerFormSubmit').textContent = 'حفظ العرض';
+  document.getElementById('offerFormCancel').classList.add('hidden');
+}
+async function saveOffer(e){
+  e.preventDefault();
+  try{
+    const title = document.getElementById('ofTitle').value.trim();
+    const discount = Number(document.getElementById('ofDiscount').value);
+    const endsAt = new Date(document.getElementById('ofEnds').value).getTime();
+    const category = document.getElementById('ofCategory').value;
+    const active = document.getElementById('ofActive').checked;
+    if(active){
+      await Promise.all(offers.filter(o=>o.active).map(o=>updateDoc(doc(db,'offers',o.id), { active:false })));
+    }
+    if(editingOfferId){
+      await updateDoc(doc(db,'offers',editingOfferId), { title, discount, endsAt, category, active });
+      showToast('تم تحديث العرض — سيظهر للعميلات فوراً');
+    } else {
+      await addDoc(collection(db,'offers'), { title, discount, endsAt, category, active });
+      showToast('تم إنشاء العرض ونشره في الموقع ✨');
+    }
+    flashSync(); resetOfferForm();
+  }catch(err){ showToast('تعذر حفظ العرض — ' + friendlyFirebaseError(err), true); console.error(err); }
+}
+async function deleteOffer(id){ await deleteDoc(doc(db,'offers',id)); showToast('تم حذف العرض'); flashSync(); }
+
+/* =========================================================================
+   ORDERS TAB
+========================================================================= */
+function renderOrdersTab(){
+  document.getElementById('adminContent').innerHTML = `
+    <div class="flex flex-wrap gap-3 mb-5">
+      <input id="orderSearchInput" placeholder="ابحثي برقم الطلب أو اسم العميلة" class="admin-input max-w-xs">
+      <select id="orderStatusFilter" class="admin-input max-w-[200px]"><option value="all">كل الحالات</option>${ORDER_STATUSES.map(s=>`<option value="${s}">${s}</option>`).join('')}</select>
+    </div>
+    <div class="admin-card overflow-x-auto">
+      <table class="w-full min-w-[760px]"><thead><tr><th class="admin-th">رقم الطلب</th><th class="admin-th">العميلة</th><th class="admin-th">الهاتف</th><th class="admin-th">الإجمالي</th><th class="admin-th">التاريخ</th><th class="admin-th">الحالة</th><th class="admin-th">الفاتورة</th></tr></thead>
+      <tbody id="orderRowsBody"></tbody></table>
+    </div>`;
+  document.getElementById('orderSearchInput').addEventListener('input', (e)=>{ ordersSearch = e.target.value; renderOrderRows(); });
+  document.getElementById('orderStatusFilter').addEventListener('change', (e)=>{ ordersStatusFilter = e.target.value; renderOrderRows(); });
+  renderOrderRows();
+}
+function renderOrderRows(){
+  const el = document.getElementById('orderRowsBody'); if(!el) return;
+  let list = [...orders];
+  if(ordersStatusFilter!=='all') list = list.filter(o=>o.status===ordersStatusFilter);
+  if(ordersSearch) list = list.filter(o=> o.id.includes(ordersSearch) || (o.customer||'').includes(ordersSearch));
+  el.innerHTML = list.map(o => `
+    <tr data-row="${o.id}" class="cursor-pointer hover:bg-gold/5 transition-colors ${o.seen===false ? 'bg-gold/5' : ''}">
+      <td class="admin-td font-bold">${o.seen===false ? '<span class="inline-block w-2 h-2 rounded-full bg-burgundy ml-2 align-middle"></span>':''}#${o.id.slice(-6).toUpperCase()}</td><td class="admin-td">${o.customer}</td><td class="admin-td">${o.phone}</td>
+      <td class="admin-td">${o.total} ج.س</td><td class="admin-td text-xs">${new Date(o.createdAt).toLocaleString('ar-EG')}</td>
+      <td class="admin-td" data-stop><select data-status="${o.id}" class="admin-input !py-1 !text-xs">${ORDER_STATUSES.map(s=>`<option ${o.status===s?'selected':''}>${s}</option>`).join('')}</select></td>
+      <td class="admin-td" data-stop><button data-invoice="${o.id}" class="seal-btn ghost !py-1.5 !px-3 text-xs"><i class="fa-solid fa-file-invoice ml-1"></i> فاتورة</button></td>
+    </tr>`).join('') || `<tr><td class="admin-td opacity-50" colspan="7">لا توجد طلبات مطابقة</td></tr>`;
+  el.querySelectorAll('[data-status]').forEach(sel => sel.onchange = ()=>updateOrderStatus(sel.dataset.status, sel.value));
+  el.querySelectorAll('[data-invoice]').forEach(btn => btn.onclick = ()=>openInvoice(btn.dataset.invoice));
+  el.querySelectorAll('[data-stop]').forEach(cell => cell.onclick = (e)=> e.stopPropagation());
+  el.querySelectorAll('[data-row]').forEach(row => row.onclick = ()=> openOrderDetail(row.dataset.row));
+}
+async function updateOrderStatus(id, status){
+  try{ await updateDoc(doc(db,'orders',id), { status }); showToast('تم تحديث حالة الطلب'); flashSync(); }
+  catch(err){ showToast('تعذر تحديث الحالة — ' + friendlyFirebaseError(err), true); }
+}
+
+/* =========================================================================
+   ORDER DETAIL MODAL
+========================================================================= */
+function openOrderDetail(id){
+  const o = orders.find(x=>x.id===id); if(!o) return;
+  document.getElementById('odNumber').textContent = '#' + o.id.slice(-6).toUpperCase();
+  const rows = (o.items||[]).map(it => `
+    <tr>
+      <td class="admin-td">${it.name}</td>
+      <td class="admin-td text-center">${catName(it.cat)}</td>
+      <td class="admin-td text-center">${it.qty}</td>
+      <td class="admin-td text-center">${it.price} ج.س</td>
+      <td class="admin-td text-center font-bold">${it.price*it.qty} ج.س</td>
+    </tr>`).join('');
+  document.getElementById('orderDetailBody').innerHTML = `
+    <div class="grid sm:grid-cols-2 gap-4 mb-6">
+      <div class="admin-card p-4"><p class="text-xs opacity-50 mb-1">العميلة</p><p class="font-bold">${o.customer}</p></div>
+      <div class="admin-card p-4"><p class="text-xs opacity-50 mb-1">رقم الهاتف</p><p class="font-bold" dir="ltr">${o.phone}</p><a href="https://wa.me/2${(o.phone||'').replace(/[^0-9]/g,'')}" target="_blank" rel="noopener" class="text-xs text-okgreen mt-1 inline-block"><i class="fa-brands fa-whatsapp ml-1"></i> تواصل واتساب</a></div>
+      <div class="admin-card p-4"><p class="text-xs opacity-50 mb-1">تاريخ الطلب</p><p class="font-bold">${new Date(o.createdAt).toLocaleString('ar-EG')}</p></div>
+      <div class="admin-card p-4"><p class="text-xs opacity-50 mb-1">حالة الطلب</p>
+        <select data-status="${o.id}" class="admin-input !py-1.5 !text-sm mt-1">${ORDER_STATUSES.map(s=>`<option ${o.status===s?'selected':''}>${s}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="admin-card overflow-hidden mb-6">
+      <table class="w-full"><thead><tr><th class="admin-th">المنتج</th><th class="admin-th text-center">القسم</th><th class="admin-th text-center">الكمية</th><th class="admin-th text-center">السعر</th><th class="admin-th text-center">الإجمالي</th></tr></thead>
+      <tbody>${rows || `<tr><td class="admin-td opacity-50" colspan="5">لا توجد عناصر</td></tr>`}</tbody></table>
+    </div>
+    <div class="flex items-center justify-between admin-card p-4 mb-6 bg-ink text-cream !border-0">
+      <span class="font-bold">الإجمالي الكلي</span><span class="font-display text-xl text-goldL">${o.total} ج.س</span>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="closeOrderDetail(); openInvoice('${o.id}');" class="seal-btn flex-1 text-sm"><i class="fa-solid fa-file-invoice ml-1"></i> عرض الفاتورة</button>
+      <button onclick="closeOrderDetail()" class="seal-btn ghost !px-5 text-sm">إغلاق</button>
+    </div>`;
+  document.getElementById('orderDetailBody').querySelectorAll('[data-status]').forEach(sel => sel.onchange = ()=>updateOrderStatus(sel.dataset.status, sel.value));
+  document.getElementById('orderDetailBg').classList.remove('hidden');
+  document.getElementById('orderDetailBg').classList.add('flex');
+}
+window.closeOrderDetail = () => { document.getElementById('orderDetailBg').classList.add('hidden'); document.getElementById('orderDetailBg').classList.remove('flex'); };
+
+/* =========================================================================
+   SETTINGS TAB
+========================================================================= */
+function renderSettingsTab(){
+  document.getElementById('adminContent').innerHTML = `
+    <div class="admin-card p-8 max-w-xl">
+      <p class="font-bold mb-4"><i class="fa-solid fa-image text-gold ml-1"></i> صورة البانر الرئيسي (الهيرو)</p>
+      <img src="${settings.heroImage || fallbackImg()}" id="bannerPreview" class="w-full h-48 object-cover rounded-xl mb-4">
+      <input type="file" accept="image/*" id="bannerInput" class="w-full text-xs file:ml-2 file:rounded-full file:border-0 file:bg-gold/15 file:text-gold file:px-3 file:py-1.5">
+      <p class="text-xs opacity-50 mt-3">يتحدث فوراً في الصفحة الرئيسية بدون أي كود.</p>
+    </div>`;
+  document.getElementById('bannerInput').addEventListener('change', changeBanner);
+}
+async function changeBanner(e){
+  const file = e.target.files[0]; if(!file) return;
+  try{
+    const url = await uploadImage(file, 'settings');
+    await setDoc(doc(db,'settings','store'), { heroImage:url }, { merge:true });
+    document.getElementById('bannerPreview').src = url;
+    showToast('تم تحديث البانر الرئيسي فوراً 🖼️'); flashSync();
+  }catch(err){ showToast('تعذر رفع الصورة — ' + friendlyFirebaseError(err), true); console.error(err); }
+}
+
+/* =========================================================================
+   INVOICE — on-screen preview + PDF export
+========================================================================= */
+let currentInvoiceOrder = null;
+function openInvoice(orderId){
+  const o = orders.find(x=>x.id===orderId); if(!o) return;
+  currentInvoiceOrder = o;
+  const invNo = '#' + o.id.slice(-6).toUpperCase();
+  const dateStr = new Date(o.createdAt).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' });
+  const rows = (o.items||[]).map((it,i) => `
+    <tr>
+      <td style="padding:10px 6px; text-align:center; color:#8a7a6f; font-size:13px;">${i+1}</td>
+      <td style="padding:10px 6px; font-weight:600;">${it.name}</td>
+      <td style="padding:10px 6px; text-align:center;">${it.qty}</td>
+      <td style="padding:10px 6px; text-align:center;">${it.price} ج.س</td>
+      <td style="padding:10px 6px; text-align:center; font-weight:700;">${it.price*it.qty} ج.س</td>
+    </tr>`).join('');
+  document.getElementById('invoicePaper').innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #B08D3E; padding-bottom:20px; margin-bottom:24px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="width:50px;height:50px;border-radius:50%;background:linear-gradient(145deg,#D8BE7E,#B08D3E);display:flex;align-items:center;justify-content:center;font-family:'Aref Ruqaa',serif;font-size:22px;color:#1C1512;">و</span>
+        <div><p style="font-family:'Aref Ruqaa',serif; font-size:22px; margin:0;">وشلي</p><p style="font-size:11px; color:#8a7a6f; margin:2px 0 0;">wishly Atelier — Luxury Event Favors</p></div>
+      </div>
+      <div style="text-align:left;">
+        <p style="font-weight:800; font-size:20px; margin:0; color:#B08D3E;">فاتورة بيع</p>
+        <p style="font-size:12px; color:#8a7a6f; margin:4px 0 0;">${invNo}</p>
+        <p style="font-size:12px; color:#8a7a6f; margin:2px 0 0;">${dateStr}</p>
+      </div>
+    </div>
+    <div style="display:flex; justify-content:space-between; margin-bottom:24px; gap:20px;">
+      <div><p style="font-size:11px; color:#8a7a6f; margin:0 0 4px;">فاتورة إلى</p><p style="font-weight:700; margin:0;">${o.customer}</p><p style="font-size:13px; color:#5a5049; margin:2px 0 0;">${o.phone}</p></div>
+      <div style="text-align:left;"><p style="font-size:11px; color:#8a7a6f; margin:0 0 4px;">حالة الطلب</p><p style="font-weight:700; margin:0;">${o.status}</p></div>
+    </div>
+    <table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+      <thead><tr style="background:#F3ECE2;"><th style="padding:10px 6px; font-size:12px; color:#8a7a6f;">#</th><th style="padding:10px 6px; font-size:12px; color:#8a7a6f;">المنتج</th><th style="padding:10px 6px; font-size:12px; color:#8a7a6f;">الكمية</th><th style="padding:10px 6px; font-size:12px; color:#8a7a6f;">السعر</th><th style="padding:10px 6px; font-size:12px; color:#8a7a6f;">الإجمالي</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div style="display:flex; justify-content:flex-end; margin-bottom:30px;">
+      <div style="width:220px;">
+        <div style="display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid #eee; font-size:14px;"><span>الإجمالي الفرعي</span><span>${o.total} ج.س</span></div>
+        <div style="display:flex; justify-content:space-between; padding:10px 0; margin-top:4px; background:#1C1512; color:#D8BE7E; border-radius:10px; padding:12px 14px; font-weight:800;"><span>الإجمالي الكلي</span><span>${o.total} ج.س</span></div>
+      </div>
+    </div>
+    <div style="text-align:center; border-top:1px dashed #ddd; padding-top:18px; color:#8a7a6f; font-size:12px; line-height:1.9;">
+      شكراً لثقتك في وشلي 🤍 — لأي استفسار: 0904298584 | hello@wishly-atelier.com<br>القاهرة، مصر
+    </div>`;
+  document.getElementById('invoiceModalBg').classList.remove('hidden');
+  document.getElementById('invoiceModalBg').classList.add('flex');
+}
+window.closeInvoice = () => { document.getElementById('invoiceModalBg').classList.add('hidden'); document.getElementById('invoiceModalBg').classList.remove('flex'); };
+window.openInvoice = openInvoice;
+window.downloadInvoicePDF = async () => {
+  if(!currentInvoiceOrder) return;
+  const el = document.getElementById('invoicePaper');
+  const canvas = await html2canvas(el, { scale:2, backgroundColor:'#ffffff' });
+  const imgData = canvas.toDataURL('image/png');
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF('p','pt','a4');
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const props = pdf.getImageProperties(imgData);
+  const imgHeight = props.height * pageWidth / props.width;
+  pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, imgHeight);
+  pdf.save(`فاتورة-${currentInvoiceOrder.id.slice(-6).toUpperCase()}.pdf`);
+  showToast('تم تحميل الفاتورة بصيغة PDF 📄');
+};
+</script>
+</body>
+</html>

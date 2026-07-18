@@ -82,7 +82,7 @@
       <p id="loginError" class="hidden text-burgundy bg-burgundy/10 border border-burgundy/30 rounded-xl px-4 py-2.5 text-sm"></p>
       <button id="loginSubmitBtn" class="seal-btn w-full">دخول <i class="fa-solid fa-arrow-left mr-2"></i></button>
     </div>
-    <p class="text-[11px] text-cream/40 mt-6 text-center leading-6">الوصول لهذه اللوحة مقتصر على فريق العمل فقط.<br>لإنشاء حساب جديد راجعي Firebase Console.</p>
+    <p class="text-[11px] text-cream/40 mt-6 text-center leading-6">الوصول لهذه اللوحة مقتصر على فريق العمل فقط.<br></p>
   </form>
 </div>
 
@@ -888,7 +888,7 @@ function renderSettingsTab(){
       <p class="font-bold mb-4"><i class="fa-solid fa-image text-gold ml-1"></i> صورة البانر الرئيسي (الهيرو)</p>
       <img src="${settings.heroImage || fallbackImg()}" id="bannerPreview" class="w-full h-48 object-cover rounded-xl mb-4">
       <input type="file" accept="image/*" id="bannerInput" class="w-full text-xs file:ml-2 file:rounded-full file:border-0 file:bg-gold/15 file:text-gold file:px-3 file:py-1.5">
-      <p class="text-xs opacity-50 mt-3">يتحدث فوراً في الصفحة الرئيسية بدون أي كود.</p>
+      <p class="text-xs opacity-50 mt-3">يتحدث فوراً في الصفحة الرئيسية .</p>
     </div>`;
   document.getElementById('bannerInput').addEventListener('change', changeBanner);
 }
